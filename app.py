@@ -225,91 +225,8 @@ def update_agent_images(selected_map):
 def enable_agent_dropdowns(selected_map):
     return [False] * 10  # Enable all dropdowns when a map is selected
 
-def predict_winner(teamA_agents, teamB_agents, selected_map):
-    return random.choice(['Team A', 'Team B'])
-
-# Callback to predict and display the winner
-@app.callback(
-    Output('prediction-result', 'children'),
-    Input('predict-button', 'n_clicks'),
-    [Input(f'agent-dropdown-A-{i}', 'value') for i in range(5)] + 
-    [Input(f'agent-dropdown-B-{i}', 'value') for i in range(5)] + 
-    [Input('map-dropdown', 'value')]
-)
-def update_prediction(n_clicks, *selected_agents_and_map):
-    if n_clicks > 0:  # Only predict after the button is clicked
-        teamA_agents = selected_agents_and_map[:5]
-        teamB_agents = selected_agents_and_map[5:10]
-        selected_map = selected_agents_and_map[10]
-        
-        winner = predict_winner(teamA_agents, teamB_agents, selected_map)
-        return f'{winner} win!'
-    return ''  # No prediction result until button is clicked
-
-
-
 # def predict_winner(teamA_agents, teamB_agents, selected_map):
-#     # Prepare data for prediction (mock example, adapt this as per your actual data structure)
-#     teamA_features = np.array([agent_mapping[agents[i]['name']] for i in teamA_agents])
-#     teamB_features = np.array([agent_mapping[agents[i]['name']] for i in teamB_agents])
-    
-#     # Encode the selected map
-#     map_feature = map_encoder.transform([selected_map])[0]
-    
-#     # Combine into the feature set for prediction
-#     input_features = np.hstack([features])
-    
-#     # Reshape input to the model's expected input dimensions (assuming a single sample)
-#     input_features = input_features.reshape((1, -1))
-    
-#     # Predict using the CNN model
-#     prediction = cnn_model.predict(input_features)
-    
-#     # Use softmax output to determine the winner
-#     winner = 'Team A' if prediction[0][0] > 0.5 else 'Team B'
-    
-#     return winner
-
-
-# # Function to prepare input data for prediction
-# def prepare_input_data(teamA_agents, teamB_agents, selected_map):
-#     print("Preparing input data...")
-
-#     # Encode Team A agents
-#     try:
-#         teamA_encoded = [agent_mapping[agent] for agent in teamA_agents]
-#         print("Team A Encoded:", teamA_encoded)
-#     except KeyError as e:
-#         print(f"KeyError: '{e}' not found in agent mapping for Team A.")
-#         return None
-
-#     # Encode Team B agents
-#     try:
-#         teamB_encoded = [agent_mapping[agent] for agent in teamB_agents]
-#         print("Team B Encoded:", teamB_encoded)
-#     except KeyError as e:
-#         print(f"KeyError: '{e}' not found in agent mapping for Team B.")
-#         return None
-
-#     # Encode the selected map
-#     try:
-#         encoded_map = map_encoder.transform([selected_map])
-#         print("Encoded Map:", encoded_map)
-#     except ValueError as e:
-#         print(f"ValueError: {e}. Check if the selected map is valid.")
-#         return None
-
-#     # Combine encoded data
-#     input_data = teamA_encoded + teamB_encoded + encoded_map.tolist()[0]  # Flatten the array
-#     print("Combined Input Data (before padding):", input_data)
-
-#     # Ensure the input data has the correct length
-#     while len(input_data) < 416:
-#         input_data.append(0)
-
-#     print("Combined Input Data (after padding):", input_data)
-
-#     return np.array(input_data).reshape(1, -1)  # Reshape to (1, 416)
+#     return random.choice(['Team A', 'Team B'])
 
 # # Callback to predict and display the winner
 # @app.callback(
@@ -325,11 +242,94 @@ def update_prediction(n_clicks, *selected_agents_and_map):
 #         teamB_agents = selected_agents_and_map[5:10]
 #         selected_map = selected_agents_and_map[10]
         
-#         # Predict the winner
 #         winner = predict_winner(teamA_agents, teamB_agents, selected_map)
+#         return f'{winner} win!'
+#     return ''  # No prediction result until button is clicked
+
+
+
+def predict_winner(teamA_agents, teamB_agents, selected_map):
+    # Prepare data for prediction (mock example, adapt this as per your actual data structure)
+    teamA_features = np.array([agent_mapping[agents[i]['name']] for i in teamA_agents])
+    teamB_features = np.array([agent_mapping[agents[i]['name']] for i in teamB_agents])
+    
+    # Encode the selected map
+    map_feature = map_encoder.transform([selected_map])[0]
+    
+    # Combine into the feature set for prediction
+    input_features = np.hstack([features])
+    
+    # Reshape input to the model's expected input dimensions (assuming a single sample)
+    input_features = input_features.reshape((1, -1))
+    
+    # Predict using the CNN model
+    prediction = cnn_model.predict(input_features)
+    
+    # Use softmax output to determine the winner
+    winner = 'Team A' if prediction[0][0] > 0.5 else 'Team B'
+    
+    return winner
+
+
+# Function to prepare input data for prediction
+def prepare_input_data(teamA_agents, teamB_agents, selected_map):
+    print("Preparing input data...")
+
+    # Encode Team A agents
+    try:
+        teamA_encoded = [agent_mapping[agent] for agent in teamA_agents]
+        print("Team A Encoded:", teamA_encoded)
+    except KeyError as e:
+        print(f"KeyError: '{e}' not found in agent mapping for Team A.")
+        return None
+
+    # Encode Team B agents
+    try:
+        teamB_encoded = [agent_mapping[agent] for agent in teamB_agents]
+        print("Team B Encoded:", teamB_encoded)
+    except KeyError as e:
+        print(f"KeyError: '{e}' not found in agent mapping for Team B.")
+        return None
+
+    # Encode the selected map
+    try:
+        encoded_map = map_encoder.transform([selected_map])
+        print("Encoded Map:", encoded_map)
+    except ValueError as e:
+        print(f"ValueError: {e}. Check if the selected map is valid.")
+        return None
+
+    # Combine encoded data
+    input_data = teamA_encoded + teamB_encoded + encoded_map.tolist()[0]  # Flatten the array
+    print("Combined Input Data (before padding):", input_data)
+
+    # Ensure the input data has the correct length
+    while len(input_data) < 416:
+        input_data.append(0)
+
+    print("Combined Input Data (after padding):", input_data)
+
+    return np.array(input_data).reshape(1, -1)  # Reshape to (1, 416)
+
+# Callback to predict and display the winner
+@app.callback(
+    Output('prediction-result', 'children'),
+    Input('predict-button', 'n_clicks'),
+    [Input(f'agent-dropdown-A-{i}', 'value') for i in range(5)] + 
+    [Input(f'agent-dropdown-B-{i}', 'value') for i in range(5)] + 
+    [Input('map-dropdown', 'value')]
+)
+def update_prediction(n_clicks, *selected_agents_and_map):
+    if n_clicks > 0:  # Only predict after the button is clicked
+        teamA_agents = selected_agents_and_map[:5]
+        teamB_agents = selected_agents_and_map[5:10]
+        selected_map = selected_agents_and_map[10]
         
-#         return f"Predicted Winner: {winner}"
-#     return ""
+        # Predict the winner
+        winner = predict_winner(teamA_agents, teamB_agents, selected_map)
+        
+        return f"Predicted Winner: {winner}"
+    return ""
 
 # Run the app
 if __name__ == '__main__':
