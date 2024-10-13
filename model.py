@@ -28,7 +28,7 @@ X_train = X_train.reshape((X_train.shape[0], 14, 1))
 X_test = X_test.reshape((X_test.shape[0], 14, 1))   
 
 model = Sequential()
-model.add(Conv1D(filters=32, kernel_size=2, activation='relu', input_shape=(14, 1)))  # input_shape = (14, 1)
+model.add(Conv1D(filters=32, kernel_size=2, activation='relu', input_shape=(14, 1))) 
 model.add(Dropout(0.2))
 model.add(Flatten())
 model.add(Dense(16, activation='relu'))
