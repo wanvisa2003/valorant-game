@@ -225,50 +225,45 @@ def update_agent_images(selected_map):
 def enable_agent_dropdowns(selected_map):
     return [False] * 10  # Enable all dropdowns when a map is selected
 
-# def predict_winner(teamA_agents, teamB_agents, selected_map):
-#     return random.choice(['Team A', 'Team B'])
-
-# # Callback to predict and display the winner
-# @app.callback(
-#     Output('prediction-result', 'children'),
-#     Input('predict-button', 'n_clicks'),
-#     [Input(f'agent-dropdown-A-{i}', 'value') for i in range(5)] + 
-#     [Input(f'agent-dropdown-B-{i}', 'value') for i in range(5)] + 
-#     [Input('map-dropdown', 'value')]
-# )
-# def update_prediction(n_clicks, *selected_agents_and_map):
-#     if n_clicks > 0:  # Only predict after the button is clicked
-#         teamA_agents = selected_agents_and_map[:5]
-#         teamB_agents = selected_agents_and_map[5:10]
-#         selected_map = selected_agents_and_map[10]
-        
-#         winner = predict_winner(teamA_agents, teamB_agents, selected_map)
-#         return f'{winner} win!'
-#     return ''  # No prediction result until button is clicked
-
-
-
 def predict_winner(teamA_agents, teamB_agents, selected_map):
-    # Prepare data for prediction (mock example, adapt this as per your actual data structure)
-    teamA_features = np.array([agent_mapping[agents[i]['name']] for i in teamA_agents])
-    teamB_features = np.array([agent_mapping[agents[i]['name']] for i in teamB_agents])
-    
-    # Encode the selected map
+    # สร้าง input array
+    input_features = []
+
+    def get_agent_features(agent_index):
+        agent_name = agents[agent_index]['name']
+        agent_data = data[(data['Agent'] == agent_name) & (data['Map'] == selected_map)]
+        if agent_data.empty:
+            agent_data = data[data['Agent'] == agent_name]
+        return agent_data[features].mean().values
+
+    for team_agents in [teamA_agents, teamB_agents]:
+        team_features = []
+        for agent_index in team_agents:
+            agent_features = get_agent_features(agent_index)
+            team_features.extend(agent_features)
+        input_features.extend(team_features)
+
     map_feature = map_encoder.transform([selected_map])[0]
-    
-    # Combine into the feature set for prediction
-    input_features = np.hstack([features])
-    
-    # Reshape input to the model's expected input dimensions (assuming a single sample)
-    input_features = input_features.reshape((1, -1))
-    
-    # Predict using the CNN model
-    prediction = cnn_model.predict(input_features)
-    
-    # Use softmax output to determine the winner
-    winner = 'Team A' if prediction[0][0] > 0.5 else 'Team B'
-    
-    return winner
+    input_features.append(map_feature)
+
+    input_data = np.array(input_features).flatten()
+
+    if len(input_data) < 14:
+        padding = np.zeros(14 - len(input_data))
+        input_data = np.concatenate([input_data, padding])
+    elif len(input_data) > 14:
+        input_data = input_data[:14]
+
+    input_data = input_data.reshape(1, 14)
+
+    # ทำนายผลโดยใช้ model
+    prediction = cnn_model.predict(input_data)
+    # print(prediction)
+
+    if prediction[0][0] > 0.15:
+        return 'Team A'
+    else:
+        return 'Team B'
 
 
 # Function to prepare input data for prediction
@@ -320,16 +315,34 @@ def prepare_input_data(teamA_agents, teamB_agents, selected_map):
     [Input('map-dropdown', 'value')]
 )
 def update_prediction(n_clicks, *selected_agents_and_map):
+
     if n_clicks > 0:  # Only predict after the button is clicked
         teamA_agents = selected_agents_and_map[:5]
         teamB_agents = selected_agents_and_map[5:10]
         selected_map = selected_agents_and_map[10]
         
-        # Predict the winner
         winner = predict_winner(teamA_agents, teamB_agents, selected_map)
+        return f'{winner} win!'
+    return ''
+
+# @app.callback(
+#     Output('prediction-result', 'children'),
+#     Input('predict-button', 'n_clicks'),
+#     [Input(f'agent-dropdown-A-{i}', 'value') for i in range(5)] + 
+#     [Input(f'agent-dropdown-B-{i}', 'value') for i in range(5)] + 
+#     [Input('map-dropdown', 'value')]
+# )
+# def update_prediction(n_clicks, *selected_agents_and_map):
+#     if n_clicks > 0:  # Only predict after the button is clicked
+#         teamA_agents = selected_agents_and_map[:5]
+#         teamB_agents = selected_agents_and_map[5:10]
+#         selected_map = selected_agents_and_map[10]
         
-        return f"Predicted Winner: {winner}"
-    return ""
+#         # Predict the winner
+#         winner = predict_winner(teamA_agents, teamB_agents, selected_map)
+        
+#         return f"Predicted Winner: {winner}"
+#     return ""
 
 # Run the app
 if __name__ == '__main__':
